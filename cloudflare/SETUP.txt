@@ -43,9 +43,11 @@ No Google or Cloudflare API key is embedded in the dashboard.
 
 6. Photograph a clearly readable label (not people or private information).
    Give upload consent, then tap Scan etiket. Check the suggested name,
-   type, labelled volume and alcohol percentage. Adjust the bottle volume to
-   your actual serving. Nothing is logged until you explicitly confirm.
-   Unknown values remain blank. Manual logging works without this service.
+   type, quantity and alcohol percentage. Beer and premixed drinks use the
+   labelled package volume; wine uses a 100 ml glass and spirits a 35 ml shot.
+   Unknown types use the labelled volume. Adjust as needed; nothing is logged
+   until you explicitly confirm. Unknown values remain blank. Manual logging
+   works without this service.
 
 The selected model is @cf/google/gemma-4-26b-a4b-it. It supports image input,
 structured JSON output, and is currently available under the free allowance.
