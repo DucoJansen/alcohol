@@ -47,8 +47,10 @@
     .status-row button { min-height: 36px; font-size: 12px; padding: 5px 9px; margin-left: auto; }
     .notice { padding: 13px 15px; border-radius: 9px; font-size: 14px; margin-bottom: 18px; background: #fff3da; border-left: 4px solid #ce8b15; }
     .notice strong { display: block; margin-bottom: 3px; }
-    #message { background: #e8f0f7; border-color: var(--blue); overflow-wrap: anywhere; }
+    #message { display: flex; align-items: flex-start; gap: 8px; background: #e8f0f7; border-color: var(--blue); overflow-wrap: anywhere; }
     #message.error { background: #fae9ec; border-color: var(--red); }
+    #message-text { flex: 1; min-width: 0; align-self: center; }
+    #dismiss-message { flex: none; width: 44px; min-height: 44px; padding: 0; font-size: 24px; line-height: 1; }
     .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 370px); gap: 20px; align-items: start; }
     .visual { min-width: 0; }
     .card { background: white; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin-bottom: 18px; box-shadow: 0 3px 14px #14334b04; }
@@ -171,7 +173,10 @@
       <span aria-hidden="true"></span><span id="updated-at">Nog geen drankjes</span>
       <button type="button" class="secondary" id="wake-button" aria-pressed="false">Scherm wakkerhouden</button>
     </div>
-    <div id="message" class="notice" role="status" aria-live="polite" hidden></div>
+    <div id="message" class="notice" hidden>
+      <div id="message-text" role="status" aria-live="polite"></div>
+      <button type="button" class="plain" id="dismiss-message" aria-label="Melding sluiten"><span aria-hidden="true">&times;</span></button>
+    </div>
     <!-- <div class="notice">
       <strong>Een schatting, geen rijadvies.</strong>
       Gebruik dit niet om te bepalen of je mag of kunt rijden. Werkelijke waarden kunnen hoger zijn. Regel alcoholvrij vervoer.
@@ -409,10 +414,15 @@
     const withDefaultModel = value => value.profile.model === "" ? { ...value, profile: { ...value.profile, model: "male" } } : value;
 
     function notify(text, error = false) {
-      $("message").textContent = text;
       $("message").classList.toggle("error", error);
       $("message").hidden = false;
+      $("message-text").textContent = text;
     }
+    $("dismiss-message").addEventListener("click", event => {
+      if (document.activeElement === event.currentTarget) $("wake-button").focus();
+      $("message").hidden = true;
+      $("message-text").textContent = "";
+    });
     function validState(value) {
       if (!value || value.version !== 1 || !value.profile || !Array.isArray(value.drinks)) return false;
       const p = value.profile;
