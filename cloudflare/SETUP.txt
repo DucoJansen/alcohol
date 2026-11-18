@@ -1,0 +1,84 @@
+FREE LABEL SCANNER - CLOUDFLARE WORKERS AI
+
+The GitHub Pages dashboard stays at its current address. Only confirmed uploads
+go to this separate Worker. Height, weight and the drink log are not uploaded.
+No Google or Cloudflare API key is embedded in the dashboard.
+
+1. Create a free Cloudflare account at https://dash.cloudflare.com/sign-up
+   or sign in at https://dash.cloudflare.com/login.
+   Stay on Workers Free and Workers AI's free allowance. Do not enable a paid
+   plan or prepaid AI credits. Free limits fail closed instead of charging.
+   Currently Workers AI allows 10,000 neurons/day; the number of scans depends
+   on the image and output size. Other free Worker request/CPU limits also apply.
+   Limits, availability and terms can change. This is not an unlimited service.
+
+2. Open https://dash.cloudflare.com/?to=/:account/workers-and-pages
+   Choose Create application and create a Worker named alcohol-label-scan.
+   Cloudflare's current walkthrough:
+   https://developers.cloudflare.com/workers/get-started/dashboard/
+   Open Edit code and replace the example with the contents of worker.mjs.
+   This is an ES module: keep the export declarations. Deploy the Worker.
+
+3. Add a Workers AI binding with the variable name AI in the Worker's Bindings.
+   In Settings -> Variables and Secrets, add:
+     ALLOWED_ORIGIN (Text): https://nhelweg.github.io
+     SCAN_TOKEN (Secret): your own random password of 20 to 128 ASCII characters
+   Use letters, digits and/or ASCII symbols, without spaces. Use a password
+   manager to create the code. Do NOT use a GitHub, Google or
+   Cloudflare API token as SCAN_TOKEN, and do NOT commit your code to GitHub.
+   Save/redeploy as prompted. Accept the model's terms yourself if prompted.
+   The origin must not include /alcohol/ or a trailing slash. If your website
+   uses a custom domain, use that exact HTTPS origin instead.
+
+4. Copy the Worker's HTTPS URL, then append /api/scan. Example:
+     https://alcohol-label-scan.YOUR-SUBDOMAIN.workers.dev/api/scan
+   Publish the updated index.html to your existing GitHub Pages site.
+
+5. On the iPhone, open that same GitHub Pages site in Safari.
+   Under Etiket scannen -> Scanner instellen (eenmalig), enter the URL and your
+   own SCAN_TOKEN. Tap Bewaar en gebruik scanner. The URL is local to this
+   browser. The code is kept only in
+   the tab's session storage; closing/reopening may require entering it again.
+   No credentials are included in exported logs.
+
+6. Photograph a clearly readable label (not people or private information).
+   Give upload consent, then tap Scan etiket. Check the suggested name,
+   type, labelled volume and alcohol percentage. Adjust the bottle volume to
+   your actual serving. Nothing is logged until you explicitly confirm.
+   Unknown values remain blank. Manual logging works without this service.
+
+The selected model is @cf/google/gemma-4-26b-a4b-it. It supports image input,
+structured JSON output, and is currently available under the free allowance.
+Cloudflare currently lists it as zero-data-retention. This Worker does not
+store photos, scan results or tokens; the request is still processed by
+Cloudflare under its terms. The resized JPEG removes EXIF metadata, not visible
+information. Do not photograph anything you would not want processed there.
+
+The private access code protects your quota. CORS alone is not authentication.
+Anyone you share the code with can use the allowance. Rotate SCAN_TOKEN and
+update the phone if it is exposed. Photos are capped at 1 MB after conversion,
+responses are validated, and unknown ABV/volume must not be inferred by the AI.
+AI can still confidently misread a label. Never use the BAC estimate for driving.
+
+OPTIONAL COMMAND-LINE DEPLOYMENT (requires Node.js and a Cloudflare login)
+From the project directory in PowerShell:
+  npx wrangler login
+  npx wrangler deploy --config cloudflare\wrangler.jsonc
+  npx wrangler secret put SCAN_TOKEN --config cloudflare\wrangler.jsonc
+Enter your private access code only at the secret prompt, never in source code.
+
+TROUBLESHOOTING
+- 401: the access code does not match SCAN_TOKEN.
+- No connection/CORS: verify the HTTPS endpoint, AI binding and ALLOWED_ORIGIN.
+  The local file preview (Origin: null) is intentionally not accepted; use your
+  actual HTTPS website. Changing where you host the app changes its local log.
+- 429: the free daily allowance or a rate limit is exhausted; log manually.
+- 502: inference failed, refused, or returned invalid data; try a clearer photo.
+- 503: a required Worker setting/binding is missing.
+- Timeout: requests stop waiting after 45 seconds. There is no automatic retry;
+  a request already being processed may still consume the free allowance.
+
+REFERENCES
+https://developers.cloudflare.com/workers-ai/platform/pricing/
+https://developers.cloudflare.com/workers-ai/models/gemma-4-26b-a4b-it/
+https://developers.cloudflare.com/workers-ai/configuration/bindings/
