@@ -338,7 +338,7 @@
           <button type="button" id="scan-button" class="secondary full" disabled>Scan etiket</button>
           <details id="ocr-details" class="spaced" hidden><summary>Details van de AI-suggestie</summary><pre id="ocr-text"></pre></details>
           <form id="photo-form" class="spaced" hidden>
-            <h3>Controleer je drankje</h3>
+            <h3>We hebben wat gevonden. Klopt dit?</h3>
             <p class="hint field">Controleer naam, ml en %. Vul jouw portie in, niet de hele fles; tik daarna op bevestigen.</p>
             <div class="field"><label for="photo-name">Naam drankje <span class="caption">(optioneel)</span></label><input id="photo-name" maxlength="80" placeholder="Drankje van foto"></div>
             <div class="fields">
@@ -769,7 +769,7 @@
         if (!validScanResult(values)) throw new Error("De scanner gaf ongeldige gegevens terug. Er is niets gelogd.");
         $("ocr-text").textContent = `Dranktype: ${values.type || "niet herkend"}\n${values.notes}`;
         $("ocr-details").hidden = false;
-        $("photo-name").value = values.name || values.type || "";
+        $("photo-name").value = values.type || "";
         $("photo-volume").value = values.volume_ml === null ? "" : values.volume_ml;
         $("photo-abv").value = values.abv_percent === null ? "" : values.abv_percent;
         if (!editedTimes.has("photo-time")) $("photo-time").value = localDateTime();
