@@ -100,8 +100,6 @@
     #drink-volume, #photo-volume, #drink-abv, #photo-abv { appearance: textfield; }
     #drink-volume::-webkit-inner-spin-button, #photo-volume::-webkit-inner-spin-button,
     #drink-abv::-webkit-inner-spin-button, #photo-abv::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-    .consent-label { display: flex; align-items: start; gap: 10px; min-height: 44px; margin: 14px 0; font-size: 12px; font-weight: 400; }
-    .consent-label input { width: 20px; height: 20px; min-height: 20px; flex: none; margin: 2px 0 0; accent-color: var(--blue); }
     #scanner-settings > summary { padding: 12px 0; font-size: 14px; }
     .setup-steps { padding-left: 22px; font-size: 13px; }
     .setup-steps li { padding-left: 3px; margin-bottom: 14px; }
@@ -324,18 +322,18 @@
                   <li><strong>Secret</strong> <code>SCAN_TOKEN</code>: een eigen willekeurige code van 20–128 letters/cijfers uit je wachtwoordmanager, geen API-sleutel.</li>
                 </ul>
               </li>
-              <li>Sla op en klik <strong>Deploy</strong>. Vul hieronder je <code>https://…workers.dev</code>-link met <code>/api/scan</code> erachter in, plus dezelfde toegangscode.</li>
+              <li>Sla op en klik <strong>Deploy</strong>. Vul hieronder je <code>https://alcohol-label-scan.[naam].workers.dev</code>-link met <code>/api/scan</code> erachter in, plus dezelfde toegangscode.</li>
             </ol>
+            <p class="hint">Door op <strong>Scan etiket</strong> te drukken, geef je toestemming om deze foto naar de Cloudflare-scanner te sturen.</p>
             <p class="hint field"><a href="./cloudflare/SETUP.txt" target="_blank" rel="noopener noreferrer">Uitgebreide hulp en foutmeldingen</a> · <a href="https://developers.cloudflare.com/workers/get-started/dashboard/" target="_blank" rel="noopener noreferrer">Cloudflare-handleiding</a></p>
             <form id="scanner-settings-form">
               <div class="field"><label for="scanner-url">Scannerlink (eindigt op /api/scan)</label><input id="scanner-url" type="url" inputmode="url" placeholder="https://alcohol-label-scan.jouw-naam.workers.dev/api/scan" autocomplete="off" spellcheck="false" required></div>
-              <div class="field"><label for="scanner-token">Dezelfde toegangscode als SCAN_TOKEN</label><input id="scanner-token" type="password" minlength="20" maxlength="128" pattern="[!-~]{20,128}" title="Gebruik 20 tot 128 letters, cijfers of ASCII-symbolen, zonder spaties." autocomplete="off" required></div>
-              <button type="submit" class="secondary full">Bewaar en gebruik scanner</button>
-              <button type="button" class="plain full" id="forget-scanner">Toegangscode vergeten</button>
+              <div class="field"><label for="scanner-token">Toegangscode (zelf gedefinieerd in stap 4)</label><input id="scanner-token" type="password" minlength="20" maxlength="128" pattern="[!-~]{20,128}" title="Gebruik 20 tot 128 letters, cijfers of ASCII-symbolen, zonder spaties." autocomplete="off" required></div>
+              <button type="submit" class="secondary full">Sla op</button>
+              <button type="button" class="plain full" id="forget-scanner">Opgeslagen code verwijderen</button>
             </form>
             <p class="hint">De link blijft bewaard; de code alleen in dit tabblad. Bij opnieuw openen moet je de code soms opnieuw invullen.</p>
           </details>
-          <label class="consent-label"><input id="photo-consent" type="checkbox"><span>Ik geef toestemming om deze foto naar mijn Cloudflare-scanner te sturen.</span></label>
           <p id="ocr-status" role="status" aria-live="polite"></p>
           <button type="button" id="scan-button" class="secondary full" disabled>Scan etiket</button>
           <details id="ocr-details" class="spaced" hidden><summary>Details van de AI-suggestie</summary><pre id="ocr-text"></pre></details>
@@ -688,7 +686,6 @@
       $("photo-input").value = ""; $("scan-button").disabled = true;
       $("photo-form").hidden = true; $("ocr-details").hidden = true;
       $("photo-form").reset(); $("photo-time").value = localDateTime();
-      $("photo-consent").checked = false;
       editedTimes.delete("photo-time");
       $("ocr-text").textContent = ""; $("ocr-status").textContent = "";
     }
@@ -742,12 +739,7 @@
         (scannerURL ? $("scanner-token") : $("scanner-url")).focus();
         return;
       }
-      if (!$("photo-consent").checked) {
-        notify("Geef eerst toestemming voor het uploaden van deze foto, of log het drankje handmatig.", true);
-        $("photo-consent").focus(); return;
-      }
       scanBusy = true; $("scan-button").disabled = true; $("photo-input").disabled = true;
-      $("photo-consent").disabled = true;
       document.querySelectorAll("#scanner-settings input, #scanner-settings button").forEach(el => { el.disabled = true; });
       $("photo-form").hidden = true; $("photo-volume").value = ""; $("photo-abv").value = "";
       $("photo-name").value = "";
@@ -798,7 +790,6 @@
       } finally {
         clearTimeout(timer);
         scanBusy = false; $("scan-button").disabled = !photoCanvas; $("photo-input").disabled = false;
-        $("photo-consent").disabled = false;
         document.querySelectorAll("#scanner-settings input, #scanner-settings button").forEach(el => { el.disabled = false; });
       }
     }
@@ -822,7 +813,7 @@
         photoCanvas = canvas;
         $("preview").src = previewURL; $("preview").hidden = false;
         $("scan-button").disabled = false;
-        $("ocr-status").textContent = "Foto klaar. Vink toestemming aan en tik op Scan etiket.";
+        $("ocr-status").textContent = "Foto klaar. Tik op Scan etiket om de foto naar de Cloudflare-scanner te sturen.";
       };
       image.onerror = () => {
         if (image.src !== previewURL) return;
