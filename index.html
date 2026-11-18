@@ -150,7 +150,7 @@
       <div class="brand-mark" aria-hidden="true">
         <svg viewBox="0 0 24 28" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 3h14M8 3v7l-4 9a4 4 0 0 0 4 6h8a4 4 0 0 0 4-6l-4-9V3M7 17h10"/><path d="M10 21h4"/></svg>
       </div>
-      <div class="brand-name">Nationaal Coördinator Alcohol <span>Geniet, maar drink met maten</span></div> 
+      <div class="brand-name">Nationaal Coördinator Alcohol <span>Geniet, maar drink met mate(n)</span></div> 
       <!-- <span>Een bewuste blik op je avond</span> -->
       <!-- <div class="masthead-label">Geniet, maar drink met maten</div> -->
     </div>
@@ -177,7 +177,7 @@
       <section class="visual" aria-label="Visualisatie van je avond">
         <div class="card">
           <div class="card-pad">
-            <div class="section-label"><h2>Geschat promillage</h2><span class="tag">INDICATIE</span></div>
+            <div class="section-label"><h2>Geschat promillage</h2><span class="tag">BORRELPEIL</span></div>
             <div class="metric" id="current-bac">—<span>‰</span></div>
             <div class="metric-label">Op dit moment · <span id="current-time"></span></div>
             <p class="metric-context" id="bac-context">Kies je lichaamswatermodel en log je eerste drankje.</p>
@@ -232,7 +232,7 @@
           </section>
         </div>
         <details class="card methods">
-          <summary>Hoe werkt deze schatting?</summary>
+          <summary>Hoe werkt het?</summary>
           <div class="details-body">
             <p>Alleen bedoeld voor volwassenen (18+). Geen medisch hulpmiddel, alcoholtester of rijgeschiktheidstest. Geen bekende nulmeting: het model neemt vóór je eerste gelogde drankje 0‰ aan, ook als je in werkelijkheid nog alcohol in je bloed hebt.</p>
             <p>Pure alcohol (g) = volume (ml) × alcoholpercentage / 100 × 0,789. Het lichaamswater wordt met de Hume–Weyers-formules (1966) geschat uit lengte (cm), gewicht (kg) en de gekozen fysiologische formule:</p>
@@ -255,7 +255,7 @@
       </section>
       <aside class="inputs" aria-label="Invoer">
         <section class="card card-pad">
-          <div class="section-label"><h2>Jouw profiel</h2><span class="tag">HÉ, WIE BEN JIJ?</span></div>
+          <div class="section-label"><h2>Jouw profiel</h2><span class="tag">GEEN NATTEVINGERWERK</span></div>
           <div class="fields">
             <div class="field"><label for="height">Lengte</label><div class="unit-input"><input id="height" type="number" inputmode="decimal" min="120" max="230" step="0.1" value="187" required data-persist><span>cm</span></div></div>
             <div class="field"><label for="weight">Gewicht</label><div class="unit-input"><input id="weight" type="number" inputmode="decimal" min="35" max="250" step="0.1" value="75" required data-persist><span>kg</span></div></div>
@@ -299,7 +299,7 @@
           </form>
         </details>
         <section class="card card-pad">
-          <div class="section-label"><h2>Etiket scannen</h2><span class="tag">CAMERA</span></div>
+          <div class="section-label"><h2>Etiket scannen</h2><span class="tag">FOTO STAAND</span></div>
           <div class="photo-zone">
             <svg class="camera-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 7h4l2-3h6l2 3h4v13H3z"/><circle cx="12" cy="13" r="4"/></svg>
             <label for="photo-input">Maak een foto van het etiket</label>
@@ -308,7 +308,6 @@
             <img id="preview" alt="Gekozen etiket voor analyse na toestemming" hidden>
           </div>
           <p id="photo-privacy" class="hint">Alleen de foto wordt verstuurd, niet je profiel of logboek. Internet nodig; gratis daglimiet.</p>
-          <p class="hint"><a id="manual-shortcut" href="#manual-form">Direct loggen zonder scanner</a> · Instellen kan vóór je volgende avond.</p>
           <details id="scanner-settings">
             <summary>Scanner instellen (eenmalig)</summary>
             <p class="hint">Doe dit op je computer. Blijf op <strong>Free</strong>; activeer geen betaald abonnement of AI-tegoed.</p>
@@ -343,7 +342,7 @@
             <div class="field"><label for="photo-name">Naam drankje <span class="caption">(optioneel)</span></label><input id="photo-name" maxlength="80" placeholder="Drankje van foto"></div>
             <div class="fields">
               <div class="field">
-                <label for="photo-volume">Jouw portie (ml)</label><input id="photo-volume" type="number" inputmode="decimal" min="1" max="5000" step="any" required>
+                <label for="photo-volume">Hoeveelheid (ml)</label><input id="photo-volume" type="number" inputmode="decimal" min="1" max="5000" step="any" required>
                 <div class="adjust-controls" role="group" aria-label="Portie aanpassen">
                   <button type="button" class="secondary" data-adjust="photo-volume" data-delta="-100" aria-label="Portie met 100 ml verlagen">−100 ml</button>
                   <button type="button" class="secondary" data-adjust="photo-volume" data-delta="100" aria-label="Portie met 100 ml verhogen">+100 ml</button>
@@ -361,7 +360,7 @@
                 </div>
               </div>
             </div>
-            <div class="field"><label for="photo-time">Begonnen met drinken op</label><input id="photo-time" type="datetime-local" required></div>
+            <div class="field"><label for="photo-time">Gedronken op</label><input id="photo-time" type="datetime-local" required></div>
             <button type="submit" class="full" data-persist>Waarden bevestigen &amp; loggen</button>
           </form>
         </section>
@@ -376,6 +375,7 @@
     const SCANNER_URL_KEY = "alcoholinzicht.scanner.url.v1";
     const SCANNER_TOKEN_KEY = "alcoholinzicht.scanner.token.v1";
     const HOUR = 3600000;
+    const MAX_CHART_SPAN = 24 * HOUR;
     const ABSORPTION = 0.75;
     const ELIMINATION = 0.15;
     const $ = id => document.getElementById(id);
@@ -515,9 +515,7 @@
       if (text !== undefined) node.textContent = text;
       return node;
     }
-    function renderChart(now, drinks, curve) {
-      const first = drinks.length ? drinks[0].time : now;
-      const start = first - HOUR;
+    function renderChart(start, now, drinks, curve) {
       const end = Math.max(now, start + 4 * HOUR);
       const span = end - start;
       const times = new Set([start, now]);
@@ -569,7 +567,7 @@
         : "Nog geen schatting beschikbaar. Log een drankje en kies het lichaamswatermodel.";
       return peak;
     }
-    function renderLists(drinks) {
+    function renderLists(drinks, overviewDrinks) {
       const list = $("drink-list"), breakdown = $("breakdown");
       list.replaceChildren(); breakdown.replaceChildren();
       $("log-count").textContent = `${drinks.length} DRANKJE${drinks.length === 1 ? "" : "S"}`;
@@ -581,7 +579,8 @@
         }
         return;
       }
-      const max = Math.max(1, ...drinks.map(grams));
+      const max = Math.max(1, ...overviewDrinks.map(grams));
+      const overviewIds = new Set(overviewDrinks.map(drink => drink.id));
       [...drinks].reverse().forEach(drink => {
         const li = document.createElement("li"); li.className = "drink-item";
         const time = document.createElement("time"); time.className = "drink-time";
@@ -603,6 +602,7 @@
           }
         });
         li.append(time, info, remove); list.append(li);
+        if (!overviewIds.has(drink.id)) return;
         const item = document.createElement("li");
         const label = document.createElement("div"); label.className = "bar-label";
         const title = document.createElement("span"); title.textContent = `${clock(drink.time)} · ${drink.name}`;
@@ -613,12 +613,16 @@
       });
     }
     function render(rebuildLists = true) {
-      const now = Date.now();
+      const wallTime = Date.now();
       for (const id of ["drink-time", "photo-time"]) {
-        if (!editedTimes.has(id) && document.activeElement !== $(id)) $(id).value = localDateTime(now);
+        if (!editedTimes.has(id) && document.activeElement !== $(id)) $(id).value = localDateTime(wallTime);
       }
-      const drinks = [...state.drinks].filter(d => d.time <= now).sort((a, b) => a.time - b.time);
-      const futureCount = state.drinks.length - drinks.length;
+      const log = [...state.drinks].sort((a, b) => a.time - b.time);
+      const started = log[0]?.time <= wallTime;
+      const start = (started ? log[0].time : wallTime) - HOUR;
+      const now = Math.min(wallTime, start + MAX_CHART_SPAN);
+      const drinks = log.filter(d => d.time <= now);
+      const futureCount = log.filter(d => d.time > wallTime).length;
       const curve = makeCurve(drinks, state.profile);
       const available = drinks.length > 0 && curve !== null;
       $("evening-date").textContent = new Intl.DateTimeFormat("nl-NL", { weekday: "long", day: "numeric", month: "long" }).format(now);
@@ -631,7 +635,7 @@
         : !drinks.length ? "Log je eerste drankje om het verloop te zien."
         : !curve ? "Kies je lichaamswatermodel om een schatting te zien."
         : curve.at(now) < state.profile.limit ? "Proost! Geniet ervan." : "Houd je autosleutels maar in je zak.";
-      const peak = renderChart(now, drinks, curve);
+      const peak = renderChart(start, now, drinks, curve);
       const total = drinks.reduce((sum, d) => sum + grams(d), 0);
       $("stat-count").textContent = drinks.length;
       $("stat-grams").textContent = `${format(total)} g`;
@@ -640,7 +644,7 @@
       $("stat-peak").textContent = available ? `${format(peak, 2)}‰` : "—";
       const minutes = drinks.length ? Math.floor((now - drinks[0].time) / 60000) : 0;
       $("stat-elapsed").textContent = drinks.length ? `${Math.floor(minutes / 60)}u ${minutes % 60}m` : "—";
-      if (rebuildLists) renderLists([...state.drinks].sort((a, b) => a.time - b.time));
+      if (rebuildLists) renderLists(log, drinks);
     }
     function addDrink(event, prefix, source) {
       event.preventDefault();
@@ -892,7 +896,6 @@
         }
       });
     }
-    $("manual-shortcut").addEventListener("click", () => { $("manual-details").open = true; });
     $("scanner-settings-form").addEventListener("submit", event => {
       event.preventDefault();
       const url = $("scanner-url").value.trim();
