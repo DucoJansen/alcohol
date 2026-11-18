@@ -92,6 +92,19 @@
     .unit-input { position: relative; }
     .unit-input input { padding-right: 42px; }
     .unit-input span { position: absolute; right: 12px; top: 12px; color: var(--muted); font-size: 14px; pointer-events: none; }
+    .adjust-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
+    .adjust-controls button { min-width: 0; min-height: 44px; padding: 6px 2px; font-size: 13px; }
+    #drink-volume, #photo-volume, #drink-abv, #photo-abv { appearance: textfield; }
+    #drink-volume::-webkit-inner-spin-button, #photo-volume::-webkit-inner-spin-button,
+    #drink-abv::-webkit-inner-spin-button, #photo-abv::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .consent-label { display: flex; align-items: start; gap: 10px; min-height: 44px; margin: 14px 0; font-size: 12px; font-weight: 400; }
+    .consent-label input { width: 20px; height: 20px; min-height: 20px; flex: none; margin: 2px 0 0; accent-color: var(--blue); }
+    #scanner-settings > summary { padding: 12px 0; font-size: 14px; }
+    .setup-steps { padding-left: 22px; font-size: 13px; }
+    .setup-steps li { padding-left: 3px; margin-bottom: 14px; }
+    .setup-steps code { font-size: .95em; overflow-wrap: anywhere; }
+    .setup-values { margin: 6px 0 0; padding-left: 16px; }
+    .setup-values li { margin-bottom: 6px; }
     details > summary { min-height: 52px; font-size: 16px; font-weight: 700; padding: 16px 20px; }
     details .details-body { padding: 0 20px 20px; }
     .full { width: 100%; }
@@ -145,7 +158,7 @@
   <div class="hero">
     <div class="hero-inner">
       <p class="eyebrow" id="evening-date">Jouw avond, in beeld</p>
-      <h1>Avondoverzicht</h1>
+      <h1>Genotsoverzicht</h1>
       <p>Log je drankje. Houd inzicht in je alcoholconsumptie.</p>
     </div>
   </div>
@@ -233,7 +246,9 @@
             <h3>Bewaren, camera en iOS</h3>
             <p>Profiel en logboek blijven in de lokale browseropslag op dit apparaat staan, ook na herladen. Tijd wordt uit absolute tijdstempels berekend, niet uit een aftellende teller. Privémodus, wissen van websitegegevens of opslagbeheer van iOS kunnen gegevens verwijderen. Exporteer als back-up.</p>
             <p>Open deze pagina via HTTPS in Safari. Gebruik eventueel Deel → Zet op beginscherm. iOS kan een pagina altijd pauzeren of afsluiten; een actieve wake lock is geen garantie. Bij terugkeer wordt het verloop opnieuw berekend. Laat de app voor offline gebruik open: dit losse HTML-bestand biedt geen gegarandeerde offline herstart.</p>
-            <p>Fotoherkenning gebruikt Tesseract.js (lokaal op je apparaat). Bij de eerste scan worden de herkenningsbibliotheek en Engelse taalbestanden van jsDelivr geladen; daarvoor is internet nodig. De foto zelf wordt niet verstuurd en niet opgeslagen. Herkenning kan onjuist of onvolledig zijn: bevestig altijd zelf de portiegrootte en het alcoholpercentage. Het flesvolume is niet noodzakelijk je gedronken portie.</p>
+            <p>Fotoherkenning gebruikt een beeldmodel via Cloudflare Workers AI. Alleen na jouw toestemming wordt een verkleinde JPEG-foto naar de ingestelde scanner gestuurd; lengte, gewicht en logboek worden niet meegestuurd. Het opnieuw tekenen van de foto verwijdert bestandsmetadata, maar niet wat zichtbaar is op de foto. Vermijd personen en privégegevens in beeld. Onze scanner slaat foto's niet op; de verwerking valt onder de voorwaarden van Cloudflare.</p>
+            <p>De gratis Cloudflare Workers- en Workers AI-abonnementen hebben harde gebruikslimieten. Bij een limiet of storing stopt scannen; handmatig loggen blijft werken. Activeer geen betaald abonnement als je geen kosten wilt. Internet en een eenmalig ingerichte scannerservice zijn nodig; de HTML-pagina alleen kan geen cloudscan uitvoeren. De toegangscode staat alleen in de sessieopslag van dit tabblad, niet in je geëxporteerde logboek.</p>
+            <p>AI kan zich vergissen, ook bij een herkenbaar merk. Niet-leesbare hoeveelheden en percentages horen leeg te blijven: bevestig altijd zelf de naam, portiegrootte en het alcoholpercentage. Het flesvolume is niet noodzakelijk je gedronken portie.</p>
             <p>Vormgeving geïnspireerd op de rijkshuisstijl, zonder rijkslogo of overheidsverband. RO Sans wordt alleen gebruikt als het lokaal is geïnstalleerd; anders het systeemlettertype.</p>
           </div>
         </details>
@@ -247,19 +262,36 @@
           </div>
           <label for="body-model">Fysiologisch lichaamswatermodel</label>
           <select id="body-model" data-persist>
-            <option value="">Kies een formule</option>
-            <option value="male">Mannelijke formule</option>
+            <option value="male" selected>Mannelijke formule</option>
             <option value="female">Vrouwelijke formule</option>
           </select>
-          <p class="hint">Nodig voor een indicatieve curve. Je profiel blijft uitsluitend in deze browser.</p>
+          <p class="hint">Standaard de mannelijke formule; pas dit zo nodig aan. Je profiel blijft uitsluitend in deze browser.</p>
         </section>
         <details class="card" id="manual-details" open>
           <summary>Handmatig loggen</summary>
           <form id="manual-form" class="details-body">
             <div class="field"><label for="drink-name">Naam drankje <span class="caption">(optioneel)</span></label><input id="drink-name" maxlength="80" placeholder="Bijv. bier, wijn of mocktail" autocomplete="off"></div>
             <div class="fields">
-              <div class="field"><label for="drink-volume">Hoeveelheid</label><div class="unit-input"><input id="drink-volume" type="number" inputmode="decimal" min="1" max="5000" step="0.1" required placeholder="250"><span>ml</span></div></div>
-              <div class="field"><label for="drink-abv">Alcohol</label><div class="unit-input"><input id="drink-abv" type="number" inputmode="decimal" min="0" max="100" step="0.1" required placeholder="5"><span>%</span></div></div>
+              <div class="field">
+                <label for="drink-volume">Hoeveelheid</label>
+                <div class="unit-input"><input id="drink-volume" type="number" inputmode="decimal" min="1" max="5000" step="any" required placeholder="250"><span>ml</span></div>
+                <div class="adjust-controls" role="group" aria-label="Hoeveelheid aanpassen">
+                  <button type="button" class="secondary" data-adjust="drink-volume" data-delta="-100" aria-label="Hoeveelheid met 100 ml verlagen">−100 ml</button>
+                  <button type="button" class="secondary" data-adjust="drink-volume" data-delta="100" aria-label="Hoeveelheid met 100 ml verhogen">+100 ml</button>
+                  <button type="button" class="secondary" data-adjust="drink-volume" data-delta="-10" aria-label="Hoeveelheid met 10 ml verlagen">−10 ml</button>
+                  <button type="button" class="secondary" data-adjust="drink-volume" data-delta="10" aria-label="Hoeveelheid met 10 ml verhogen">+10 ml</button>
+                </div>
+              </div>
+              <div class="field">
+                <label for="drink-abv">Alcohol</label>
+                <div class="unit-input"><input id="drink-abv" type="number" inputmode="decimal" min="0" max="100" step="any" required placeholder="5"><span>%</span></div>
+                <div class="adjust-controls" role="group" aria-label="Alcoholpercentage aanpassen">
+                  <button type="button" class="secondary" data-adjust="drink-abv" data-delta="-1" aria-label="Alcohol met 1 procentpunt verlagen">−1</button>
+                  <button type="button" class="secondary" data-adjust="drink-abv" data-delta="1" aria-label="Alcohol met 1 procentpunt verhogen">+1</button>
+                  <button type="button" class="secondary" data-adjust="drink-abv" data-delta="-0.1" aria-label="Alcohol met 0,1 procentpunt verlagen">−0,1</button>
+                  <button type="button" class="secondary" data-adjust="drink-abv" data-delta="0.1" aria-label="Alcohol met 0,1 procentpunt verhogen">+0,1</button>
+                </div>
+              </div>
             </div>
             <div class="field"><label for="drink-time">Gedronken op</label><input id="drink-time" type="datetime-local" required></div>
             <button type="submit" class="full" data-persist>+ Drankje toevoegen</button>
@@ -271,21 +303,63 @@
           <div class="photo-zone">
             <svg class="camera-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 7h4l2-3h6l2 3h4v13H3z"/><circle cx="12" cy="13" r="4"/></svg>
             <label for="photo-input">Maak een foto van het etiket</label>
-            <p class="hint">Zorg dat het percentage en volume leesbaar zijn. Kies een foto of gebruik je camera.</p>
+            <p class="hint">Fotografeer het percentage en de inhoud op het etiket.</p>
             <input id="photo-input" type="file" accept="image/*" capture="environment" class="spaced" aria-describedby="photo-privacy">
-            <img id="preview" alt="Gekozen etiket, alleen lokaal verwerkt" hidden>
+            <img id="preview" alt="Gekozen etiket voor analyse na toestemming" hidden>
           </div>
-          <p id="photo-privacy" class="hint">Foto blijft op je apparaat. Eerste scan downloadt herkenningssoftware.</p>
+          <p id="photo-privacy" class="hint">Alleen de foto wordt verstuurd, niet je profiel of logboek. Internet nodig; gratis daglimiet.</p>
+          <p class="hint"><a id="manual-shortcut" href="#manual-form">Direct loggen zonder scanner</a> · Instellen kan vóór je volgende avond.</p>
+          <details id="scanner-settings">
+            <summary>Scanner instellen (eenmalig)</summary>
+            <p class="hint">Doe dit op je computer. Blijf op <strong>Free</strong>; activeer geen betaald abonnement of AI-tegoed.</p>
+            <ol class="setup-steps">
+              <li><a href="https://dash.cloudflare.com/sign-up" target="_blank" rel="noopener noreferrer">Maak een gratis Cloudflare-account</a>, of <a href="https://dash.cloudflare.com/login" target="_blank" rel="noopener noreferrer">log in</a>.</li>
+              <li>Open <a href="https://dash.cloudflare.com/?to=/:account/workers-and-pages" target="_blank" rel="noopener noreferrer">Workers &amp; Pages</a> → <strong>Create application</strong>; maak een Worker met de naam <code>alcohol-label-scan</code>. Vervang bij <strong>Edit code</strong> de voorbeeldcode door <a href="./cloudflare/worker.mjs" target="_blank" rel="noopener noreferrer">deze scannercode</a> → <strong>Deploy</strong>.</li>
+              <li>Open bij die Worker <strong>Bindings → Add binding → Workers AI</strong>; geef de binding de naam <code>AI</code>.</li>
+              <li>Voeg bij <strong>Settings → Variables and Secrets</strong> toe:
+                <ul class="setup-values">
+                  <li><strong>Text</strong> <code>ALLOWED_ORIGIN</code>: <code>https://nhelweg.github.io</code> (zonder <code>/alcohol/</code>).</li>
+                  <li><strong>Secret</strong> <code>SCAN_TOKEN</code>: een eigen willekeurige code van 20–128 letters/cijfers uit je wachtwoordmanager, geen API-sleutel.</li>
+                </ul>
+              </li>
+              <li>Sla op en klik <strong>Deploy</strong>. Vul hieronder je <code>https://…workers.dev</code>-link met <code>/api/scan</code> erachter in, plus dezelfde toegangscode.</li>
+            </ol>
+            <p class="hint field"><a href="./cloudflare/SETUP.txt" target="_blank" rel="noopener noreferrer">Uitgebreide hulp en foutmeldingen</a> · <a href="https://developers.cloudflare.com/workers/get-started/dashboard/" target="_blank" rel="noopener noreferrer">Cloudflare-handleiding</a></p>
+            <form id="scanner-settings-form">
+              <div class="field"><label for="scanner-url">Scannerlink (eindigt op /api/scan)</label><input id="scanner-url" type="url" inputmode="url" placeholder="https://alcohol-label-scan.jouw-naam.workers.dev/api/scan" autocomplete="off" spellcheck="false" required></div>
+              <div class="field"><label for="scanner-token">Dezelfde toegangscode als SCAN_TOKEN</label><input id="scanner-token" type="password" minlength="20" maxlength="128" pattern="[!-~]{20,128}" title="Gebruik 20 tot 128 letters, cijfers of ASCII-symbolen, zonder spaties." autocomplete="off" required></div>
+              <button type="submit" class="secondary full">Bewaar en gebruik scanner</button>
+              <button type="button" class="plain full" id="forget-scanner">Toegangscode vergeten</button>
+            </form>
+            <p class="hint">De link blijft bewaard; de code alleen in dit tabblad. Bij opnieuw openen moet je de code soms opnieuw invullen.</p>
+          </details>
+          <label class="consent-label"><input id="photo-consent" type="checkbox"><span>Ik geef toestemming om deze foto naar mijn Cloudflare-scanner te sturen.</span></label>
           <p id="ocr-status" role="status" aria-live="polite"></p>
-          <button type="button" id="scan-button" class="secondary full" disabled>Lees percentage en volume</button>
-          <details id="ocr-details" class="spaced" hidden><summary>Herkende tekst bekijken</summary><pre id="ocr-text"></pre></details>
+          <button type="button" id="scan-button" class="secondary full" disabled>Scan etiket</button>
+          <details id="ocr-details" class="spaced" hidden><summary>Details van de AI-suggestie</summary><pre id="ocr-text"></pre></details>
           <form id="photo-form" class="spaced" hidden>
             <h3>Controleer je drankje</h3>
-            <p class="hint field">De scan is een suggestie, geen meting. Pas het flesvolume aan naar je eigen portie. Er wordt nooit automatisch gelogd.</p>
+            <p class="hint field">Controleer naam, ml en %. Vul jouw portie in, niet de hele fles; tik daarna op bevestigen.</p>
             <div class="field"><label for="photo-name">Naam drankje <span class="caption">(optioneel)</span></label><input id="photo-name" maxlength="80" placeholder="Drankje van foto"></div>
             <div class="fields">
-              <div class="field"><label for="photo-volume">Jouw portie (ml)</label><input id="photo-volume" type="number" inputmode="decimal" min="1" max="5000" step="0.1" required></div>
-              <div class="field"><label for="photo-abv">Alcohol (%)</label><input id="photo-abv" type="number" inputmode="decimal" min="0" max="100" step="0.1" required></div>
+              <div class="field">
+                <label for="photo-volume">Jouw portie (ml)</label><input id="photo-volume" type="number" inputmode="decimal" min="1" max="5000" step="any" required>
+                <div class="adjust-controls" role="group" aria-label="Portie aanpassen">
+                  <button type="button" class="secondary" data-adjust="photo-volume" data-delta="-100" aria-label="Portie met 100 ml verlagen">−100 ml</button>
+                  <button type="button" class="secondary" data-adjust="photo-volume" data-delta="100" aria-label="Portie met 100 ml verhogen">+100 ml</button>
+                  <button type="button" class="secondary" data-adjust="photo-volume" data-delta="-10" aria-label="Portie met 10 ml verlagen">−10 ml</button>
+                  <button type="button" class="secondary" data-adjust="photo-volume" data-delta="10" aria-label="Portie met 10 ml verhogen">+10 ml</button>
+                </div>
+              </div>
+              <div class="field">
+                <label for="photo-abv">Alcohol (%)</label><input id="photo-abv" type="number" inputmode="decimal" min="0" max="100" step="any" required>
+                <div class="adjust-controls" role="group" aria-label="Gescand alcoholpercentage aanpassen">
+                  <button type="button" class="secondary" data-adjust="photo-abv" data-delta="-1" aria-label="Gescand alcohol met 1 procentpunt verlagen">−1</button>
+                  <button type="button" class="secondary" data-adjust="photo-abv" data-delta="1" aria-label="Gescand alcohol met 1 procentpunt verhogen">+1</button>
+                  <button type="button" class="secondary" data-adjust="photo-abv" data-delta="-0.1" aria-label="Gescand alcohol met 0,1 procentpunt verlagen">−0,1</button>
+                  <button type="button" class="secondary" data-adjust="photo-abv" data-delta="0.1" aria-label="Gescand alcohol met 0,1 procentpunt verhogen">+0,1</button>
+                </div>
+              </div>
             </div>
             <div class="field"><label for="photo-time">Begonnen met drinken op</label><input id="photo-time" type="datetime-local" required></div>
             <button type="submit" class="full" data-persist>Waarden bevestigen &amp; loggen</button>
@@ -299,6 +373,8 @@
   <script>
     "use strict";
     const STORAGE_KEY = "alcoholinzicht.avond.v1";
+    const SCANNER_URL_KEY = "alcoholinzicht.scanner.url.v1";
+    const SCANNER_TOKEN_KEY = "alcoholinzicht.scanner.token.v1";
     const HOUR = 3600000;
     const ABSORPTION = 0.75;
     const ELIMINATION = 0.15;
@@ -306,17 +382,20 @@
     const format = (n, digits = 1) => new Intl.NumberFormat("nl-NL", { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(n);
     const clock = t => new Intl.DateTimeFormat("nl-NL", { hour: "2-digit", minute: "2-digit" }).format(t);
     const dateLabel = t => new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(t);
-    const defaults = () => ({ version: 1, profile: { height: 187, weight: 75, model: "", limit: 0.5 }, drinks: [] });
+    const defaults = () => ({ version: 1, profile: { height: 187, weight: 75, model: "male", limit: 0.5 }, drinks: [] });
     let state = defaults();
     let storageReady = true;
     let rawBackup = null;
     let photoCanvas = null;
     let previewURL = null;
     let scanBusy = false;
+    let scannerURL = "";
+    let scannerToken = "";
     let wakeLock = null;
     let wantWake = false;
     let wakePending = false;
     const editedTimes = new Set();
+    const withDefaultModel = value => value.profile.model === "" ? { ...value, profile: { ...value.profile, model: "male" } } : value;
 
     function notify(text, error = false) {
       $("message").textContent = text;
@@ -353,7 +432,8 @@
         if (rawBackup !== null) {
           const parsed = JSON.parse(rawBackup);
           if (!validState(parsed)) throw new Error("Onbekend of ongeldig logboekformaat.");
-          state = parsed;
+          state = withDefaultModel(parsed);
+          if (state !== parsed) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
         } else {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
         }
@@ -478,7 +558,7 @@
           data.append(marker);
         }
       } else {
-        labels.append(svgNode("text", { x: (left + right) / 2, y: 163, "text-anchor": "middle", fill: "#526777", "font-size": 11 }, drinks.length ? "Kies eerst je lichaamswatermodel" : "Je eerste drankje begint het overzicht"));
+        labels.append(svgNode("text", { x: ((left + right) / 2)+30, y: 148, "text-anchor": "middle", fill: "#526777", "font-size": 11 }, drinks.length ? "Kies eerst je lichaamswatermodel" : "Je eerste drankje begint het overzicht"));
       }
       data.append(svgNode("line", { x1: x(now), y1: upper, x2: x(now), y2: bottom, stroke: "#7b93a5", "stroke-dasharray": "2 4" }));
       labels.append(svgNode("text", { x: Math.min(right - 12, Math.max(left + 12, x(now))), y: 10, "text-anchor": "middle", fill: "#526777", "font-size": 11 }, "NU"));
@@ -550,7 +630,7 @@
         ? `${futureCount} log(s) liggen na de huidige kloktijd en tellen nog niet mee. Controleer je apparaatklok en logboek.`
         : !drinks.length ? "Log je eerste drankje om het verloop te zien."
         : !curve ? "Kies je lichaamswatermodel om een schatting te zien."
-        : "Alleen een modeluitkomst. Opname kan nog doorgaan; geen rijadvies.";
+        : curve.at(now) < state.profile.limit ? "Proost! Geniet ervan." : "Houd je autosleutels maar in je zak.";
       const peak = renderChart(now, drinks, curve);
       const total = drinks.reduce((sum, d) => sum + grams(d), 0);
       $("stat-count").textContent = drinks.length;
@@ -601,77 +681,118 @@
       $("photo-input").value = ""; $("scan-button").disabled = true;
       $("photo-form").hidden = true; $("ocr-details").hidden = true;
       $("photo-form").reset(); $("photo-time").value = localDateTime();
+      $("photo-consent").checked = false;
       editedTimes.delete("photo-time");
       $("ocr-text").textContent = ""; $("ocr-status").textContent = "";
     }
-    function parseLabel(text) {
-      const normalized = text.replace(/,/g, ".");
-      const abvs = [...normalized.matchAll(/(\d{1,3}(?:\.\d+)?)\s*%/g)].map(m => Number(m[1])).filter(v => v >= 0 && v <= 100);
-      const volumes = [...normalized.matchAll(/(\d+(?:\.\d+)?)\s*(ml|cl|dl|l|litres?|liters?)\b/gi)]
-        .map(m => Number(m[1]) * ({ ml: 1, cl: 10, dl: 100 }[m[2].toLowerCase()] || 1000))
-        .filter(v => v >= 1 && v <= 5000);
-      const uniqueAbvs = [...new Set(abvs)], uniqueVolumes = [...new Set(volumes)];
-      return { abv: uniqueAbvs.length === 1 ? uniqueAbvs[0] : null, volume: uniqueVolumes.length === 1 ? uniqueVolumes[0] : null };
+    function validScannerURL(value) {
+      try {
+        const url = new URL(value);
+        return url.protocol === "https:" && url.hostname.endsWith(".workers.dev") &&
+          !url.username && !url.password && !url.port && url.pathname === "/api/scan" && !url.search && !url.hash;
+      } catch (error) {
+        if (error instanceof TypeError) return false;
+        throw error;
+      }
     }
-    let tesseractPromise = null;
-    function loadTesseract() {
-      if (typeof Tesseract !== "undefined") return Promise.resolve(Tesseract);
-      if (tesseractPromise) return tesseractPromise;
-      tesseractPromise = new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
-        script.crossOrigin = "anonymous";
-        const timer = setTimeout(() => { script.remove(); reject(new Error("Download duurde te lang. Controleer je internetverbinding.")); }, 45000);
-        script.onload = () => {
-          clearTimeout(timer);
-          if (typeof Tesseract === "undefined") { script.remove(); reject(new Error("Herkenningsbibliotheek kon niet starten.")); }
-          else resolve(Tesseract);
-        };
-        script.onerror = () => { clearTimeout(timer); script.remove(); reject(new Error("Herkenningssoftware kon niet worden gedownload.")); };
-        document.head.append(script);
-      }).catch(error => { tesseractPromise = null; throw error; });
-      return tesseractPromise;
+    function loadScannerSettings() {
+      try {
+        const url = localStorage.getItem(SCANNER_URL_KEY) || "";
+        const token = sessionStorage.getItem(SCANNER_TOKEN_KEY) || "";
+        if (url && !validScannerURL(url)) throw new Error("Het opgeslagen scanneradres is ongeldig.");
+        scannerURL = url; scannerToken = token;
+        $("scanner-url").value = url; $("scanner-token").value = token;
+      } catch (error) {
+        console.error("Scannerinstellingen konden niet worden geladen:", error);
+        notify("Scannerinstellingen konden niet worden geladen. Stel de scanner opnieuw in; je logboek is niet gewijzigd.", true);
+      }
+    }
+    function validScanResult(value) {
+      const nullableText = (text, max) => text === null || typeof text === "string" && text.length <= max;
+      return value !== null && typeof value === "object" &&
+        nullableText(value.name, 80) && nullableText(value.type, 80) &&
+        (value.volume_ml === null || Number.isFinite(value.volume_ml) && value.volume_ml >= 1 && value.volume_ml <= 5000) &&
+        (value.abv_percent === null || Number.isFinite(value.abv_percent) && value.abv_percent >= 0 && value.abv_percent <= 100) &&
+        typeof value.notes === "string" && value.notes.length <= 400;
+    }
+    function photoDataURL(canvas) {
+      return new Promise((resolve, reject) => {
+        canvas.toBlob(blob => {
+          if (!blob) { reject(new Error("De foto kon niet worden omgezet naar JPEG.")); return; }
+          if (blob.size > 1000000) { reject(new Error("Deze foto is na verkleinen nog groter dan 1 MB. Kies een eenvoudiger of kleinere foto.")); return; }
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error("De foto kon niet worden gelezen."));
+          reader.readAsDataURL(blob);
+        }, "image/jpeg", 0.82);
+      });
     }
     async function scanPhoto() {
       if (!photoCanvas || scanBusy) return;
+      if (!scannerURL || !scannerToken) {
+        $("scanner-settings").open = true;
+        notify("Stel eerst je gratis Cloudflare-scanner en toegangscode in. Handmatig loggen blijft beschikbaar.", true);
+        (scannerURL ? $("scanner-token") : $("scanner-url")).focus();
+        return;
+      }
+      if (!$("photo-consent").checked) {
+        notify("Geef eerst toestemming voor het uploaden van deze foto, of log het drankje handmatig.", true);
+        $("photo-consent").focus(); return;
+      }
       scanBusy = true; $("scan-button").disabled = true; $("photo-input").disabled = true;
+      $("photo-consent").disabled = true;
+      document.querySelectorAll("#scanner-settings input, #scanner-settings button").forEach(el => { el.disabled = true; });
       $("photo-form").hidden = true; $("photo-volume").value = ""; $("photo-abv").value = "";
+      $("photo-name").value = "";
       $("ocr-details").hidden = true; $("ocr-text").textContent = "";
-      $("ocr-status").textContent = "Herkenningssoftware laden… Houd deze pagina open.";
-      let worker = null;
+      $("ocr-status").textContent = "Foto verkleinen en analyseren via Cloudflare…";
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 45000);
       try {
-        const engine = await loadTesseract();
-        worker = await engine.createWorker("eng", 1, {
-          workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
-          corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.0",
-          langPath: "https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int",
-          logger: progress => {
-            if (progress.status === "recognizing text") $("ocr-status").textContent = `Etiket lezen… ${Math.round(progress.progress * 100)}%`;
-          }
+        const image = await photoDataURL(photoCanvas);
+        if (controller.signal.aborted) throw new DOMException("Scan verlopen.", "AbortError");
+        const response = await fetch(scannerURL, {
+          method: "POST", credentials: "omit", redirect: "error", referrerPolicy: "no-referrer",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${scannerToken}` },
+          body: JSON.stringify({ image }), signal: controller.signal
         });
-        const result = await worker.recognize(photoCanvas);
-        const text = result.data.text;
-        const values = parseLabel(text);
-        $("ocr-text").textContent = text || "Geen tekst herkend.";
+        if (!response.ok) {
+          const messages = {
+            400: "De scanner kon de foto niet verwerken. Probeer een andere foto.",
+            401: "De toegangscode is onjuist. Controleer de scannerinstellingen.",
+            413: "De foto is te groot voor de scanner.",
+            429: "De gratis scanlimiet is bereikt. Probeer later opnieuw of log handmatig.",
+            503: "De scannerservice is nog niet correct ingesteld of tijdelijk niet beschikbaar."
+          };
+          throw new Error(messages[response.status] || `De scannerservice gaf fout ${response.status}. Probeer opnieuw of log handmatig.`);
+        }
+        const values = await response.json();
+        if (!validScanResult(values)) throw new Error("De scanner gaf ongeldige gegevens terug. Er is niets gelogd.");
+        $("ocr-text").textContent = `Dranktype: ${values.type || "niet herkend"}\n${values.notes}`;
         $("ocr-details").hidden = false;
-        $("photo-volume").value = values.volume === null ? "" : values.volume;
-        $("photo-abv").value = values.abv === null ? "" : values.abv;
-        $("photo-time").value = localDateTime();
+        $("photo-name").value = values.name || values.type || "";
+        $("photo-volume").value = values.volume_ml === null ? "" : values.volume_ml;
+        $("photo-abv").value = values.abv_percent === null ? "" : values.abv_percent;
+        if (!editedTimes.has("photo-time")) $("photo-time").value = localDateTime();
         $("photo-form").hidden = false;
-        $("ocr-status").textContent = values.volume !== null && values.abv !== null
-          ? "Suggesties gevonden. Controleer beide waarden en je eigen portiegrootte."
-          : "Niet alle waarden zijn eenduidig herkend. Vul ontbrekende waarden zelf in en controleer je portie.";
+        $("ocr-status").textContent = values.volume_ml !== null && values.abv_percent !== null
+          ? "AI-suggesties gevonden. Controleer naam, percentage en je eigen portiegrootte."
+          : "Niet alles is leesbaar. Controleer de AI-suggesties en vul de ontbrekende waarden zelf in.";
+        if (storageReady) notify("Scan afgerond. Controleer en bevestig de waarden; er is nog niets gelogd.");
       } catch (error) {
         console.error("Etiketherkenning mislukt:", error);
         $("ocr-status").textContent = "Scannen mislukt. Probeer opnieuw of vul de waarden hieronder zelf in.";
-        $("photo-form").hidden = false; $("photo-time").value = localDateTime();
-        notify(`Etiketherkenning mislukt: ${error.message || String(error)}. Je kunt altijd handmatig loggen.`, true);
+        $("photo-form").hidden = false;
+        if (!editedTimes.has("photo-time")) $("photo-time").value = localDateTime();
+        const message = error.name === "AbortError" ? "De scan duurde langer dan 45 seconden."
+          : error instanceof TypeError ? "Geen verbinding met de scanner. Controleer internet, het scanneradres en de toegestane website in Cloudflare."
+          : error.message || String(error);
+        notify(`Etiketherkenning mislukt: ${message} Je kunt altijd handmatig loggen.`, true);
       } finally {
-        if (worker) {
-          try { await worker.terminate(); }
-          catch (error) { console.error("Herkenningsproces kon niet afsluiten:", error); notify("De scan is afgerond, maar het herkenningsproces kon niet afsluiten. Sluit de pagina na het exporteren als dit aanhoudt.", true); }
-        }
+        clearTimeout(timer);
         scanBusy = false; $("scan-button").disabled = !photoCanvas; $("photo-input").disabled = false;
+        $("photo-consent").disabled = false;
+        document.querySelectorAll("#scanner-settings input, #scanner-settings button").forEach(el => { el.disabled = false; });
       }
     }
     async function preparePhoto() {
@@ -683,7 +804,7 @@
       const image = new Image();
       image.onload = () => {
         if (image.src !== previewURL) return;
-        const scale = Math.min(1, 2000 / Math.max(image.naturalWidth, image.naturalHeight));
+        const scale = Math.min(1, 1600 / Math.max(image.naturalWidth, image.naturalHeight));
         const canvas = document.createElement("canvas");
         canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
         canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
@@ -694,7 +815,7 @@
         photoCanvas = canvas;
         $("preview").src = previewURL; $("preview").hidden = false;
         $("scan-button").disabled = false;
-        $("ocr-status").textContent = "Foto klaar. Tik op lezen om de herkenningssoftware te laden.";
+        $("ocr-status").textContent = "Foto klaar. Vink toestemming aan en tik op Scan etiket.";
       };
       image.onerror = () => {
         if (image.src !== previewURL) return;
@@ -754,6 +875,54 @@
     for (const id of ["drink-time", "photo-time"]) $(id).addEventListener("input", () => editedTimes.add(id));
     $("photo-input").addEventListener("change", preparePhoto);
     $("scan-button").addEventListener("click", scanPhoto);
+    function adjustNumber(input, delta) {
+      const value = input.value === "" ? 0 : Number(input.value);
+      if (input.validity.badInput || !Number.isFinite(value)) { notify("Vul eerst een geldig getal in.", true); input.focus(); return; }
+      input.value = Math.min(Number(input.max), Math.max(Number(input.min), Number((value + delta).toFixed(10))));
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    document.querySelectorAll("[data-adjust]").forEach(button => {
+      button.addEventListener("click", () => adjustNumber($(button.dataset.adjust), Number(button.dataset.delta)));
+    });
+    for (const id of ["drink-volume", "photo-volume", "drink-abv", "photo-abv"]) {
+      $(id).addEventListener("keydown", event => {
+        if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+          const step = id.endsWith("-volume") ? 10 : 0.1;
+          event.preventDefault(); adjustNumber($(id), event.key === "ArrowUp" ? step : -step);
+        }
+      });
+    }
+    $("manual-shortcut").addEventListener("click", () => { $("manual-details").open = true; });
+    $("scanner-settings-form").addEventListener("submit", event => {
+      event.preventDefault();
+      const url = $("scanner-url").value.trim();
+      const token = $("scanner-token").value;
+      if (!event.currentTarget.reportValidity()) return;
+      if (!validScannerURL(url)) {
+        notify("Gebruik het HTTPS-adres van je eigen Cloudflare Worker, eindigend op .workers.dev/api/scan, zonder parameters.", true);
+        $("scanner-url").focus(); return;
+      }
+      try {
+        localStorage.setItem(SCANNER_URL_KEY, url);
+        sessionStorage.setItem(SCANNER_TOKEN_KEY, token);
+        scannerURL = url; scannerToken = token;
+        $("scanner-settings").open = false;
+        notify("Scanner ingesteld. Alleen na toestemming wordt een foto geüpload.");
+      } catch (error) {
+        console.error("Scannerinstellingen konden niet worden bewaard:", error);
+        notify("Scannerinstellingen konden niet worden bewaard. Controleer of browseropslag is toegestaan.", true);
+      }
+    });
+    $("forget-scanner").addEventListener("click", () => {
+      try {
+        sessionStorage.removeItem(SCANNER_TOKEN_KEY);
+        scannerToken = ""; $("scanner-token").value = "";
+        notify("Scannercode uit dit tabblad verwijderd. Je logboek is behouden.");
+      } catch (error) {
+        console.error("Scannercode kon niet worden verwijderd:", error);
+        notify("Scannercode kon niet worden verwijderd. Sluit dit tabblad om de sessie te beëindigen.", true);
+      }
+    });
     document.querySelectorAll('[role="tab"]').forEach(tab => {
       tab.addEventListener("click", () => selectTab(tab));
       tab.addEventListener("keydown", event => {
@@ -787,7 +956,7 @@
         rawBackup = event.newValue;
         const next = event.newValue === null ? defaults() : JSON.parse(event.newValue);
         if (!validState(next)) throw new Error("Ongeldige gegevens uit een ander venster.");
-        state = next; syncProfile(); render();
+        state = withDefaultModel(next); syncProfile(); render();
         notify("Het logboek is in een ander venster gewijzigd. Dit overzicht is bijgewerkt.");
       } catch (error) { storageFailure(error); }
     });
@@ -795,7 +964,7 @@
       if (document.visibilityState === "visible") { render(); void acquireWake(); }
     });
     window.addEventListener("pageshow", () => { render(); void acquireWake(); });
-    loadState(); syncProfile();
+    loadState(); syncProfile(); loadScannerSettings();
     $("drink-time").value = localDateTime(); $("photo-time").value = localDateTime();
     render();
     setInterval(() => render(false), 15000);
