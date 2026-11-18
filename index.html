@@ -92,6 +92,8 @@
     input[type="datetime-local"] { -webkit-appearance: none; appearance: none; }
     .field { margin-bottom: 14px; }
     .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .drink-presets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+    .drink-presets button { padding-inline: 4px; }
     .unit-input { position: relative; }
     .unit-input input { padding-right: 42px; }
     .unit-input span { position: absolute; right: 12px; top: 12px; color: var(--muted); font-size: 14px; pointer-events: none; }
@@ -271,6 +273,14 @@
         <details class="card" id="manual-details">
           <summary>Handmatig loggen</summary>
           <form id="manual-form" class="details-body">
+            <div class="field">
+            <!-- <p class="caption" id="drink-presets-label">Standaardmaten</p> -->
+            <div class="drink-presets" role="group" aria-labelledby="drink-presets-label">
+                <button type="button" class="secondary" data-volume="250" data-abv="5">Pils</button>
+                <button type="button" class="secondary" data-volume="100" data-abv="12">Wijn</button>
+                <button type="button" class="secondary" data-volume="35" data-abv="35">Shotje</button>
+              </div>
+            </div>
             <div class="field"><label for="drink-name">Naam drankje <span class="caption">(optioneel)</span></label><input id="drink-name" maxlength="80" placeholder="Bijv. bier, wijn of mocktail" autocomplete="off"></div>
             <div class="fields">
               <div class="field">
@@ -869,6 +879,14 @@
       });
     }
     $("manual-form").addEventListener("submit", event => addDrink(event, "drink", "manual"));
+    $("manual-form").querySelectorAll(".drink-presets button").forEach(button => {
+      button.addEventListener("click", () => {
+        $("drink-name").value = button.textContent.trim();
+        $("drink-volume").value = button.dataset.volume;
+        $("drink-abv").value = button.dataset.abv;
+        if (!editedTimes.has("drink-time")) $("drink-time").value = localDateTime();
+      });
+    });
     $("photo-form").addEventListener("submit", event => addDrink(event, "photo", "photo"));
     for (const id of ["drink-time", "photo-time"]) $(id).addEventListener("input", () => editedTimes.add(id));
     $("photo-input").addEventListener("change", preparePhoto);
