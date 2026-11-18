@@ -268,7 +268,7 @@
             <option value="male" selected>Mannelijke formule</option>
             <option value="female">Vrouwelijke formule</option>
           </select>
-          <p class="hint">Standaard de mannelijke formule; pas dit zo nodig aan. Je profiel blijft uitsluitend in deze browser.</p>
+          <!-- <p class="hint">Standaard de mannelijke formule; pas dit zo nodig aan. Je profiel blijft uitsluitend in deze browser.</p> -->
         </section>
         <details class="card" id="manual-details">
           <summary>Handmatig loggen</summary>
@@ -306,7 +306,7 @@
             </div>
             <div class="field"><label for="drink-time">Gedronken op</label><input id="drink-time" type="datetime-local" required></div>
             <button type="submit" class="full" data-persist>+ Drankje toevoegen</button>
-            <p class="hint">Log alleen wat je daadwerkelijk drinkt. Gebruik voor een mix de alcoholfractie van de hele portie.</p>
+            <p class="hint">Log alleen wat je daadwerkelijk drinkt. Gebruik voor een mix het percentage van de hele portie.</p>
           </form>
         </details>
         <section class="card card-pad">
@@ -320,8 +320,8 @@
           </div>
           <p id="photo-privacy" class="hint">Alleen de foto wordt verstuurd, niet je profiel of logboek. Internet nodig; gratis daglimiet.</p>
           <details id="scanner-settings">
-            <summary>Scanner instellen (eenmalig)</summary>
-            <p class="hint">Doe dit op je computer. Blijf op <strong>Free</strong>; activeer geen betaald abonnement of AI-tegoed.</p>
+            <summary>Scanner instellen</summary>
+            <p class="hint">Doe dit eenmalig op je computer. Blijf op <strong>Free</strong>; activeer geen betaald abonnement of AI-tegoed.</p>
             <ol class="setup-steps">
               <li><a href="https://dash.cloudflare.com/sign-up" target="_blank" rel="noopener noreferrer">Maak een gratis Cloudflare-account</a>, of <a href="https://dash.cloudflare.com/login" target="_blank" rel="noopener noreferrer">log in</a>.</li>
               <li>Open <a href="https://dash.cloudflare.com/?to=/:account/workers-and-pages" target="_blank" rel="noopener noreferrer">Workers &amp; Pages</a> → <strong>Create application</strong>; maak een Worker met de naam <code>alcohol-label-scan</code>. Vervang bij <strong>Edit code</strong> de voorbeeldcode door <a href="./cloudflare/worker.mjs" target="_blank" rel="noopener noreferrer">deze scannercode</a> → <strong>Deploy</strong>.</li>
@@ -329,7 +329,7 @@
               <li>Voeg bij <strong>Settings → Variables and Secrets</strong> toe:
                 <ul class="setup-values">
                   <li><strong>Text</strong> <code>ALLOWED_ORIGIN</code>: <code>https://nhelweg.github.io</code> (zonder <code>/alcohol/</code>).</li>
-                  <li><strong>Secret</strong> <code>SCAN_TOKEN</code>: een eigen willekeurige code van 20–128 letters/cijfers uit je wachtwoordmanager, geen API-sleutel.</li>
+                  <li><strong>Secret</strong> <code>SCAN_TOKEN</code>: een eigen willekeurige code van 20–128 letters/cijfers.</li>
                 </ul>
               </li>
               <li>Sla op en klik <strong>Deploy</strong>. Vul hieronder je <code>https://alcohol-label-scan.[naam].workers.dev</code>-link met <code>/api/scan</code> erachter in, plus dezelfde toegangscode.</li>
@@ -349,7 +349,7 @@
           <details id="ocr-details" class="spaced" hidden><summary>Details van de AI-suggestie</summary><pre id="ocr-text"></pre></details>
           <form id="photo-form" class="spaced" hidden>
             <h3>We hebben wat gevonden. Klopt dit?</h3>
-            <p class="hint field">Controleer naam, ml en %. Vul jouw portie in, niet de hele fles; tik daarna op bevestigen.</p>
+            <p class="hint field">De hoeveelheid wordt ingevuld op basis van het herkende type: volledige verpakking voor bier of mixdrank, een standaardglas wijn of een shot sterke drank. Bij een onbekend type wordt de etiketinhoud gebruikt. Controleer en pas zo nodig aan.</p>
             <div class="field"><label for="photo-name">Naam drankje <span class="caption">(optioneel)</span></label><input id="photo-name" maxlength="80" placeholder="Drankje van foto"></div>
             <div class="fields">
               <div class="field">
@@ -379,7 +379,7 @@
     </div>
     <noscript><div class="notice">JavaScript is nodig voor berekeningen, camera en lokale opslag. Schakel dit in om het dashboard te gebruiken.</div></noscript>
   </main>
-  <footer>Een schatting, geen blaastest. Laat dit cijfer niet bepalen of je nog kunt rijden. Bij bewusteloosheid, ademhalingsproblemen of vermoeden van alcoholvergiftiging: bel 112.</footer>
+  <footer>Een schatting, geen blaastest. Laat dit cijfer niet bepalen of je nog kunt rijden.</footer>
   <script>
     "use strict";
     const STORAGE_KEY = "alcoholinzicht.avond.v1";
@@ -481,6 +481,12 @@
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
     }
     const grams = d => d.volume * d.abv / 100 * 0.789;
+    function suggestedScanVolume(type, labelledVolume) {
+      const normalizedType = (type || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      if (/\b(wijn|wine)\b/.test(normalizedType)) return 100;
+      if (/\b(sterke drank(?:en)?|gedistilleerde drank(?:en)?|gedistilleerd|distilled spirits?|spirits?|liquors?|liqueur|likeur|vodka|wodka|gin|rum|whisky|whiskey|bourbon|tequila|cognac|brandy|jenever|genever|brandewijn|absint|pastis|grappa|schnapps?)\b/.test(normalizedType)) return 35;
+      return labelledVolume;
+    }
     function bodyWater(profile) {
       if (profile.model === "male") return 0.194786 * profile.height + 0.296785 * profile.weight - 14.012934;
       if (profile.model === "female") return 0.34454 * profile.height + 0.183809 * profile.weight - 35.270121;
@@ -780,12 +786,13 @@
         $("ocr-text").textContent = `Dranktype: ${values.type || "niet herkend"}\n${values.notes}`;
         $("ocr-details").hidden = false;
         $("photo-name").value = values.type || "";
-        $("photo-volume").value = values.volume_ml === null ? "" : values.volume_ml;
+        const volume = suggestedScanVolume(values.type, values.volume_ml);
+        $("photo-volume").value = volume === null ? "" : volume;
         $("photo-abv").value = values.abv_percent === null ? "" : values.abv_percent;
         if (!editedTimes.has("photo-time")) $("photo-time").value = localDateTime();
         $("photo-form").hidden = false;
-        $("ocr-status").textContent = values.volume_ml !== null && values.abv_percent !== null
-          ? "AI-suggesties gevonden. Controleer naam, percentage en je eigen portiegrootte."
+        $("ocr-status").textContent = volume !== null && values.abv_percent !== null
+          ? "AI-suggesties gevonden. Controleer naam, automatisch ingevulde hoeveelheid en percentage."
           : "Niet alles is leesbaar. Controleer de AI-suggesties en vul de ontbrekende waarden zelf in.";
         if (storageReady) notify("Scan afgerond. Controleer en bevestig de waarden; er is nog niets gelogd.");
       } catch (error) {
