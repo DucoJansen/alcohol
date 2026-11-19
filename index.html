@@ -473,7 +473,7 @@
         state = next;
         storageReady = true;
         document.querySelectorAll("[data-persist]").forEach(el => { el.disabled = false; });
-        $("save-status").innerHTML = '<i class="status-dot"></i>Lokaal opgeslagen';
+        $("save-status").innerHTML = '<i class="status-dot"></i>Opgeslagen';
         return true;
       } catch (error) {
         storageFailure(error);
