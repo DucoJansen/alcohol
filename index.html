@@ -73,6 +73,7 @@
     .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--muted); margin: 8px 0 12px; }
     .legend i { width: 18px; display: inline-block; vertical-align: middle; border-top: 3px solid var(--blue); margin-right: 5px; }
     .legend .dotted { border-top: 2px dashed var(--red); }
+    .legend .forecast { border-top: 3px dashed #8ca6c0; }
     .caption, .hint { font-size: 12px; color: var(--muted); line-height: 1.5; }
     .hint { margin: 7px 0 0; }
     .limit-setting { margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line); }
@@ -203,8 +204,8 @@
               <defs><linearGradient id="area-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#154273" stop-opacity=".19"/><stop offset="1" stop-color="#154273" stop-opacity=".015"/></linearGradient></defs>
               <g id="chart-grid"></g><g id="chart-data"></g><g id="chart-labels"></g>
             </svg>
-            <div class="legend"><span><i></i>Geschat verloop</span><span><i class="dotted"></i>Wettelijke referentie</span></div>
-            <p class="caption" id="chart-note">De grafiek begint 1 uur voor je eerste drankje. Geen voorspelling na nu.</p>
+            <div class="legend"><span><i></i>Geschat verloop</span><span><i class="forecast"></i>Indicatie komend uur (voorspelling)</span><span><i class="dotted"></i>Wettelijke referentie</span></div>
+            <p class="caption" id="chart-note">De grafiek begint 1 uur voor je eerste drankje. De lichte stippellijn toont een voorspelling tot 1 uur na NU, zonder nieuwe drankjes.</p>
             <div class="limit-setting">
               <label for="limit">Wettelijk limiet</label>
               <select id="limit" data-persist>
@@ -543,7 +544,8 @@
       return node;
     }
     function renderChart(start, now, drinks, curve) {
-      const end = Math.max(now, start + 4 * HOUR);
+      const forecastEnd = now + HOUR;
+      const end = Math.max(forecastEnd, start + 4 * HOUR);
       const span = end - start;
       const times = new Set([start, now]);
       for (let i = 0; i <= 240; i++) {
@@ -552,8 +554,13 @@
       }
       if (curve) curve.events.filter(t => t >= start && t <= now).forEach(t => times.add(t));
       const points = [...times].sort((a, b) => a - b).map(t => [t, curve ? curve.at(t) : 0]);
+      const forecastTimes = new Set([now, forecastEnd]);
+      for (let i = 1; i < 60; i++) forecastTimes.add(now + i * HOUR / 60);
+      if (curve) curve.events.filter(t => t > now && t < forecastEnd).forEach(t => forecastTimes.add(t));
+      const forecastPoints = [...forecastTimes].sort((a, b) => a - b).map(t => [t, curve ? curve.at(t) : 0]);
       const peak = curve && drinks.length ? Math.max(...points.map(p => p[1])) : 0;
-      const top = Math.max(0.8, Math.ceil(Math.max(peak, state.profile.limit) * 1.2 / 0.2) * 0.2);
+      const forecastPeak = curve && drinks.length ? Math.max(...forecastPoints.map(p => p[1])) : 0;
+      const top = Math.max(0.8, Math.ceil(Math.max(peak, forecastPeak, state.profile.limit) * 1.2 / 0.2) * 0.2);
       const left = 36, right = 348, upper = 18, bottom = 216;
       const x = t => left + (t - start) / span * (right - left);
       const y = value => bottom - value / top * (bottom - upper);
@@ -577,6 +584,8 @@
         const path = points.map(([t, v], i) => `${i ? "L" : "M"}${x(t).toFixed(2)},${y(v).toFixed(2)}`).join(" ");
         data.append(svgNode("path", { d: `${path} L${x(now)},${bottom} L${left},${bottom} Z`, fill: "url(#area-fill)" }));
         data.append(svgNode("path", { d: path, fill: "none", stroke: "#154273", "stroke-width": 2.8, "stroke-linejoin": "round" }));
+        const forecastPath = forecastPoints.map(([t, v], i) => `${i ? "L" : "M"}${x(t).toFixed(2)},${y(v).toFixed(2)}`).join(" ");
+        data.append(svgNode("path", { d: forecastPath, fill: "none", stroke: "#8ca6c0", "stroke-width": 2.8, "stroke-dasharray": "5 4", "stroke-linejoin": "round" }));
         const currentY = y(curve.at(now));
         data.append(svgNode("circle", { cx: x(now), cy: currentY, r: 4.5, fill: "#154273", stroke: "white", "stroke-width": 2 }));
       } else {
@@ -585,9 +594,9 @@
       data.append(timeMarker(now, "#7b93a5"));
       labels.append(svgNode("text", { x: Math.min(right - 12, Math.max(left + 12, x(now))), y: 10, "text-anchor": "middle", fill: "#526777", "font-size": 11 }, "NU"));
       $("chart-duration").textContent = `${format(span / HOUR, 1)} uur in beeld`;
-      $("chart-note").textContent = `${dateLabel(start)} – ${dateLabel(end)}. Vóór het eerste drankje wordt 0‰ aangenomen.`;
+      $("chart-note").textContent = `${dateLabel(start)} – ${dateLabel(end)}. Vóór het eerste drankje wordt 0‰ aangenomen. De lichte stippellijn tot ${clock(forecastEnd)} is een voorspelling en houdt geen rekening met toekomstige drankjes.`;
       $("chart-desc").textContent = curve && drinks.length
-        ? `Geschat verloop vanaf ${dateLabel(start)} tot nu. Nu ${format(curve.at(now), 2)} promille, piek tot nu ${format(peak, 2)} promille. Rode referentielijn op ${format(state.profile.limit)} promille.`
+        ? `Geschat verloop vanaf ${dateLabel(start)} tot nu. Nu ${format(curve.at(now), 2)} promille, piek tot nu ${format(peak, 2)} promille. Een lichtere stippellijn toont een onzekere indicatie tot ${dateLabel(forecastEnd)}, alleen op basis van al gelogde drankjes tot NU, zonder nieuwe drankjes. Rode referentielijn op ${format(state.profile.limit)} promille.`
         : "Nog geen schatting beschikbaar. Log een drankje en kies het lichaamswatermodel.";
       return peak;
     }
