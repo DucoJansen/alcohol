@@ -255,7 +255,7 @@
             <p>Profiel en logboek blijven in de lokale browseropslag op dit apparaat staan, ook na herladen. Tijd wordt uit absolute tijdstempels berekend, niet uit een aftellende teller. Privémodus, wissen van websitegegevens of opslagbeheer van iOS kunnen gegevens verwijderen. Exporteer als back-up.</p>
             <p>Open deze pagina via HTTPS in Safari. Gebruik eventueel Deel → Zet op beginscherm. iOS kan een pagina altijd pauzeren of afsluiten; een actieve wake lock is geen garantie. Bij terugkeer wordt het verloop opnieuw berekend. Laat de app voor offline gebruik open: dit losse HTML-bestand biedt geen gegarandeerde offline herstart.</p>
             <p>Fotoherkenning gebruikt een beeldmodel via Cloudflare Workers AI. Alleen na jouw toestemming wordt een verkleinde JPEG-foto naar de ingestelde scanner gestuurd; lengte, gewicht en logboek worden niet meegestuurd. Het opnieuw tekenen van de foto verwijdert bestandsmetadata, maar niet wat zichtbaar is op de foto. Vermijd personen en privégegevens in beeld. Onze scanner slaat foto's niet op; de verwerking valt onder de voorwaarden van Cloudflare.</p>
-            <p>De gratis Cloudflare Workers- en Workers AI-abonnementen hebben harde gebruikslimieten. Bij een limiet of storing stopt scannen; handmatig loggen blijft werken. Activeer geen betaald abonnement als je geen kosten wilt. Internet en een eenmalig ingerichte scannerservice zijn nodig; de HTML-pagina alleen kan geen cloudscan uitvoeren. De toegangscode staat alleen in de sessieopslag van dit tabblad, niet in je geëxporteerde logboek.</p>
+            <p>De gratis Cloudflare Workers- en Workers AI-abonnementen hebben harde gebruikslimieten. Bij een limiet of storing stopt scannen; handmatig loggen blijft werken. Activeer geen betaald abonnement als je geen kosten wilt. Internet en een eenmalig ingerichte scannerservice zijn nodig; de HTML-pagina alleen kan geen cloudscan uitvoeren. De app bewaart de toegangscode in de lokale browseropslag, niet in je geëxporteerde logboek.</p>
             <p>AI kan zich vergissen, ook bij een herkenbaar merk. Niet-leesbare hoeveelheden en percentages horen leeg te blijven: bevestig altijd zelf de naam, portiegrootte en het alcoholpercentage. Het flesvolume is niet noodzakelijk je gedronken portie.</p>
             <p>Vormgeving geïnspireerd op de rijkshuisstijl, zonder rijkslogo of overheidsverband. RO Sans wordt alleen gebruikt als het lokaal is geïnstalleerd; anders het systeemlettertype.</p>
           </div>
@@ -343,11 +343,11 @@
             <p class="hint field"><a href="./cloudflare/SETUP.txt" target="_blank" rel="noopener noreferrer">Uitgebreide hulp en foutmeldingen</a> · <a href="https://developers.cloudflare.com/workers/get-started/dashboard/" target="_blank" rel="noopener noreferrer">Cloudflare-handleiding</a></p>
             <form id="scanner-settings-form">
               <div class="field"><label for="scanner-url">Scannerlink (eindigt op /api/scan)</label><input id="scanner-url" type="url" inputmode="url" placeholder="https://alcohol-label-scan.jouw-naam.workers.dev/api/scan" autocomplete="off" spellcheck="false" required></div>
-              <div class="field"><label for="scanner-token">Toegangscode (zelf gedefinieerd in stap 4)</label><input id="scanner-token" type="password" minlength="20" maxlength="128" pattern="[!-~]{20,128}" title="Gebruik 20 tot 128 letters, cijfers of ASCII-symbolen, zonder spaties." autocomplete="off" required></div>
+              <div class="field"><label for="scanner-token">Toegangscode (zelf gedefinieerd in stap 4)</label><input id="scanner-token" name="scanner-token" type="password" minlength="20" maxlength="128" pattern="[!-~]{20,128}" title="Gebruik 20 tot 128 letters, cijfers of ASCII-symbolen, zonder spaties." autocomplete="current-password" required></div>
               <button type="submit" class="secondary full">Sla op</button>
               <button type="button" class="plain full" id="forget-scanner">Opgeslagen code verwijderen</button>
             </form>
-            <p class="hint">De link blijft bewaard; de code alleen in dit tabblad. Bij opnieuw openen moet je de code soms opnieuw invullen.</p>
+            <p class="hint">Met <strong>Sla op</strong> blijven de link en code in deze browser bewaard, ook na opnieuw openen. Sla de code alleen op in een browser die je vertrouwt.</p>
           </details>
           <p id="ocr-status" role="status" aria-live="polite"></p>
           <button type="button" id="scan-button" class="secondary full" disabled>Scan etiket</button>
@@ -557,6 +557,7 @@
       const left = 36, right = 348, upper = 18, bottom = 216;
       const x = t => left + (t - start) / span * (right - left);
       const y = value => bottom - value / top * (bottom - upper);
+      const timeMarker = (time, color) => svgNode("line", { x1: x(time), y1: upper, x2: x(time), y2: bottom, stroke: color, "stroke-dasharray": "2 4" });
       const grid = $("chart-grid"), data = $("chart-data"), labels = $("chart-labels");
       grid.replaceChildren(); data.replaceChildren(); labels.replaceChildren();
       for (let i = 0; i <= 4; i++) {
@@ -568,6 +569,7 @@
         const time = start + span * i / 4;
         labels.append(svgNode("text", { x: x(time), y: 240, "text-anchor": i === 0 ? "start" : i === 4 ? "end" : "middle", fill: "#526777", "font-size": 12 }, clock(time)));
       }
+      for (const drink of drinks) grid.append(timeMarker(drink.time, "#9aabb8"));
       const limitY = y(state.profile.limit);
       data.append(svgNode("line", { x1: left, y1: limitY, x2: right, y2: limitY, stroke: "#b62032", "stroke-width": 1.6, "stroke-dasharray": "4 5" }));
       labels.append(svgNode("text", { x: right - 3, y: limitY - 7, "text-anchor": "end", fill: "#b62032", "font-size": 12 }, `${format(state.profile.limit)}‰ referentie`));
@@ -577,15 +579,10 @@
         data.append(svgNode("path", { d: path, fill: "none", stroke: "#154273", "stroke-width": 2.8, "stroke-linejoin": "round" }));
         const currentY = y(curve.at(now));
         data.append(svgNode("circle", { cx: x(now), cy: currentY, r: 4.5, fill: "#154273", stroke: "white", "stroke-width": 2 }));
-        for (const drink of drinks) {
-          const marker = svgNode("circle", { cx: x(drink.time), cy: bottom, r: 3, fill: "#718ba2" });
-          marker.append(svgNode("title", {}, `${drink.name}: ${dateLabel(drink.time)}`));
-          data.append(marker);
-        }
       } else {
         labels.append(svgNode("text", { x: ((left + right) / 2)+30, y: 148, "text-anchor": "middle", fill: "#526777", "font-size": 11 }, drinks.length ? "Kies eerst je lichaamswatermodel" : "Je eerste drankje begint het overzicht"));
       }
-      data.append(svgNode("line", { x1: x(now), y1: upper, x2: x(now), y2: bottom, stroke: "#7b93a5", "stroke-dasharray": "2 4" }));
+      data.append(timeMarker(now, "#7b93a5"));
       labels.append(svgNode("text", { x: Math.min(right - 12, Math.max(left + 12, x(now))), y: 10, "text-anchor": "middle", fill: "#526777", "font-size": 11 }, "NU"));
       $("chart-duration").textContent = `${format(span / HOUR, 1)} uur in beeld`;
       $("chart-note").textContent = `${dateLabel(start)} – ${dateLabel(end)}. Vóór het eerste drankje wordt 0‰ aangenomen.`;
@@ -728,10 +725,20 @@
     function loadScannerSettings() {
       try {
         const url = localStorage.getItem(SCANNER_URL_KEY) || "";
-        const token = sessionStorage.getItem(SCANNER_TOKEN_KEY) || "";
         if (url && !validScannerURL(url)) throw new Error("Het opgeslagen scanneradres is ongeldig.");
-        scannerURL = url; scannerToken = token;
-        $("scanner-url").value = url; $("scanner-token").value = token;
+        const savedToken = localStorage.getItem(SCANNER_TOKEN_KEY);
+        const sessionToken = savedToken === null ? sessionStorage.getItem(SCANNER_TOKEN_KEY) : null;
+        scannerURL = url; scannerToken = savedToken ?? sessionToken ?? "";
+        $("scanner-url").value = url; $("scanner-token").value = scannerToken;
+        if (url && sessionToken) {
+          try {
+            localStorage.setItem(SCANNER_TOKEN_KEY, sessionToken);
+            sessionStorage.removeItem(SCANNER_TOKEN_KEY);
+          } catch (error) {
+            console.error("Scannercode kon niet worden overgezet:", error);
+            notify("De bestaande scannercode kon niet worden overgezet. Probeer de scannerinstellingen opnieuw op te slaan.", true);
+          }
+        }
       } catch (error) {
         console.error("Scannerinstellingen konden niet worden geladen:", error);
         notify("Scannerinstellingen konden niet worden geladen. Stel de scanner opnieuw in; je logboek is niet gewijzigd.", true);
@@ -936,10 +943,10 @@
       }
       try {
         localStorage.setItem(SCANNER_URL_KEY, url);
-        sessionStorage.setItem(SCANNER_TOKEN_KEY, token);
+        localStorage.setItem(SCANNER_TOKEN_KEY, token);
         scannerURL = url; scannerToken = token;
         $("scanner-settings").open = false;
-        notify("Scanner ingesteld. Alleen na toestemming wordt een foto geüpload.");
+        notify("Scanner ingesteld en toegangscode bewaard in deze browser. Alleen na toestemming wordt een foto geüpload.");
       } catch (error) {
         console.error("Scannerinstellingen konden niet worden bewaard:", error);
         notify("Scannerinstellingen konden niet worden bewaard. Controleer of browseropslag is toegestaan.", true);
@@ -948,11 +955,12 @@
     $("forget-scanner").addEventListener("click", () => {
       try {
         sessionStorage.removeItem(SCANNER_TOKEN_KEY);
+        localStorage.removeItem(SCANNER_TOKEN_KEY);
         scannerToken = ""; $("scanner-token").value = "";
-        notify("Scannercode uit dit tabblad verwijderd. Je logboek is behouden.");
+        notify("Scannercode uit de browseropslag verwijderd. Je logboek is behouden.");
       } catch (error) {
         console.error("Scannercode kon niet worden verwijderd:", error);
-        notify("Scannercode kon niet worden verwijderd. Sluit dit tabblad om de sessie te beëindigen.", true);
+        notify("Scannercode kon niet worden verwijderd. Controleer of browseropslag is toegestaan.", true);
       }
     });
     document.querySelectorAll('[role="tab"]').forEach(tab => {
