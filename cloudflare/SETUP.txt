@@ -35,11 +35,11 @@ No Google or Cloudflare API key is embedded in the dashboard.
    Publish the updated index.html to your existing GitHub Pages site.
 
 5. On the iPhone, open that same GitHub Pages site in Safari.
-   Under Etiket scannen -> Scanner instellen (eenmalig), enter the URL and your
-   own SCAN_TOKEN. Tap Bewaar en gebruik scanner. The URL is local to this
-   browser. The code is kept only in
-   the tab's session storage; closing/reopening may require entering it again.
-   No credentials are included in exported logs.
+   Under Etiket scannen -> Scanner instellen, enter the URL and your own
+   SCAN_TOKEN. Tap Sla op. The app keeps the URL and code in this browser's
+   local storage across restarts. Only save the code in a browser you trust.
+   To remove it from the app, tap Opgeslagen code verwijderen. No credentials
+   are included in exported logs.
 
 6. Photograph a clearly readable label (not people or private information).
    Give upload consent, then tap Scan etiket. Check the suggested name,
