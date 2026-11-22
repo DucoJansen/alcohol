@@ -25,7 +25,10 @@ export default function Tabs({ children }: TabsProps) {
       if (e.key === "End") next = tabs.length - 1;
       if (next >= 0) {
         e.preventDefault();
-        setActiveTab(tabs[next].id);
+        const nextTab = tabs[next];
+        if (nextTab != null) {
+          setActiveTab(nextTab.id);
+        }
       }
     },
     [activeTab, tabs],
@@ -43,7 +46,7 @@ export default function Tabs({ children }: TabsProps) {
             role="tab"
             id={`tab-${tab.id}`}
             aria-controls={`panel-${tab.id}`}
-            aria-selected={String(tab.id === activeTab)}
+            aria-selected={tab.id === activeTab ? "true" : "false"}
             tabIndex={tab.id === activeTab ? 0 : -1}
             onClick={() => setActiveTab(tab.id)}
             onKeyDown={handleKeyDown}

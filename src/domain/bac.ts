@@ -42,7 +42,8 @@ export function makeCurve(drinks: Drink[], profile: Profile): BACCurve | null {
   const segments: Array<{ time: number; level: number; rate: number }> = [];
   let level = 0;
   let rate = 0;
-  let previous = events.length ? events[0][0] : 0;
+  const firstEvent = events[0];
+  let previous = firstEvent != null ? firstEvent[0] : 0;
 
   for (const [time, delta] of events) {
     level = Math.max(0, level + (rate - ELIMINATION) * (time - previous) / HOUR);

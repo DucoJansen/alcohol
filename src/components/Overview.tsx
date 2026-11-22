@@ -12,7 +12,7 @@ interface OverviewProps {
 export default function Overview({ drinks, profile, wallTime }: OverviewProps) {
   const log = [...drinks].sort((a, b) => a.time - b.time);
   const firstDrink = log[0];
-  const started = firstDrink?.time <= wallTime;
+  const started = firstDrink != null && firstDrink.time <= wallTime;
   const start = (started ? firstDrink.time : wallTime) - HOUR;
   const now = Math.min(wallTime, start + MAX_CHART_SPAN);
   const filteredDrinks = log.filter(d => d.time <= now);

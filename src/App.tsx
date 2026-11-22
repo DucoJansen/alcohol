@@ -141,7 +141,7 @@ export default function App() {
   const now = wallTime;
   const log = [...state.drinks].sort((a, b) => a.time - b.time);
   const firstDrink = log[0];
-  const started = firstDrink?.time <= now;
+  const started = firstDrink != null && firstDrink.time <= now;
   const chartStart = (started ? firstDrink.time : now) - HOUR;
   const chartNow = Math.min(now, chartStart + MAX_CHART_SPAN);
 

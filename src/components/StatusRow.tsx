@@ -35,7 +35,7 @@ export default function StatusRow({ now, drinksCount, onWakeClick }: StatusRowPr
         type="button"
         className="secondary"
         id="wake-button"
-        aria-pressed={String(wantWake)}
+        aria-pressed={wantWake ? "true" : "false"}
         onClick={handleClick}
       >
         {wakeText}

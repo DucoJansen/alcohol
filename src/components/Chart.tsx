@@ -26,7 +26,7 @@ export default function Chart({ drinks, profile, wallTime }: ChartProps) {
   useEffect(() => {
     const log = [...drinks].sort((a, b) => a.time - b.time);
     const firstDrink = log[0];
-    const started = firstDrink?.time <= wallTime;
+    const started = firstDrink != null && firstDrink.time <= wallTime;
     const start = (started ? firstDrink.time : wallTime) - HOUR;
     const now = Math.min(wallTime, start + MAX_CHART_SPAN);
     const forecastEnd = now + HOUR;
